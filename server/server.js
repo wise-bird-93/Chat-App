@@ -9,7 +9,7 @@ dotenv.config();
 
 const app = express();
 app.use(cors({
-  origin: "http://localhost:3000",
+  origin: ["http://localhost:3000","https://chat-app-ashen-psi.vercel.app"],
   methods: ["GET", "POST", "PUT", "DELETE"]
 }));
 app.use(express.json());
@@ -36,7 +36,7 @@ const server = http.createServer(app);
 // ✅ attach socket.io to http server
 const io = new Server(server, {
   cors: {
-    origin: "*",
+    origin: ["http://localhost:3000","https://chat-app-ashen-psi.vercel.app"],
     methods: ["GET", "POST"]
   }
 });
