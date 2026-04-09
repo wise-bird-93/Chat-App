@@ -53,7 +53,7 @@ function GroupChatWindow({ selectedGroup, currentUser, token }) {
   const fetchMessages = async () => {
     try {
       const res = await axios.get(
-        `http://localhost:5000/api/groups/messages/${selectedGroup._id}`,
+        `https://chat-app-c6vk.onrender.com/api/groups/messages/${selectedGroup._id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setMessages(res.data);

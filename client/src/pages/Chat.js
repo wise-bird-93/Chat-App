@@ -32,7 +32,7 @@ function Chat({ onLogout }) {
 
   const fetchUsers = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/Auth/users", {
+      const res = await axios.get("https://chat-app-c6vk.onrender.com/api/Auth/users", {
         headers: { Authorization: `Bearer ${token}` }
       });
       // filter out current user
@@ -45,7 +45,7 @@ function Chat({ onLogout }) {
 
   const fetchGroups = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/groups/mygroups", {
+      const res = await axios.get("https://chat-app-c6vk.onrender.com/api/groups/mygroups", {
         headers: { Authorization: `Bearer ${token}` }
       });
       setGroups(res.data);

@@ -15,7 +15,7 @@ function Register() {
       setLoading(true);
       setError("");
 
-      await axios.post("http://localhost:5000/api/Auth/register", {
+      await axios.post("https://chat-app-c6vk.onrender.com/api/Auth/register", {
         username,
         email,
         password

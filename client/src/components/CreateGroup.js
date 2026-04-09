@@ -30,7 +30,7 @@ function CreateGroup({ users, token, onClose, onGroupCreated }) {
       setError("");
 
       await axios.post(
-        "http://localhost:5000/api/groups/create",
+        "https://chat-app-c6vk.onrender.com/api/groups/create",
         { name: groupName, members: selectedMembers },
         { headers: { Authorization: `Bearer ${token}` } }
       );

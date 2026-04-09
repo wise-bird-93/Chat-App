@@ -88,7 +88,7 @@ function ChatWindow({ selectedUser, currentUser, token }) {
   const fetchMessages = async () => {
     try {
       const res = await axios.get(
-        `http://localhost:5000/api/messages/conversation/${selectedUser._id}`,
+        `https://chat-app-c6vk.onrender.com/api/messages/conversation/${selectedUser._id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setMessages(res.data);
@@ -135,7 +135,7 @@ function ChatWindow({ selectedUser, currentUser, token }) {
     try {
       // ✅ save to DB via API to get real _id
       const res = await axios.post(
-        "http://localhost:5000/api/messages/send",
+        "https://chat-app-c6vk.onrender.com/api/messages/send",
         {
           receiverId: selectedUser._id,
           content: messageContent

@@ -14,7 +14,7 @@ function Login({ onLogin }) {
       setLoading(true);
       setError("");
 
-      const res = await axios.post("http://localhost:5000/api/Auth/login", {
+      const res = await axios.post("https://chat-app-c6vk.onrender.com/api/Auth/login", {
         email,
         password
       });
