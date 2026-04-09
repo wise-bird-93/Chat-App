@@ -9,8 +9,9 @@ dotenv.config();
 
 const app = express();
 app.use(cors({
-  origin: ["http://localhost:3000","https://chat-app-ashen-psi.vercel.app"],
-  methods: ["GET", "POST", "PUT", "DELETE"]
+  origin: "*",
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"]
 }));
 app.use(express.json());
 
@@ -36,9 +37,12 @@ const server = http.createServer(app);
 // ✅ attach socket.io to http server
 const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:3000","https://chat-app-ashen-psi.vercel.app"],
-    methods: ["GET", "POST"]
-  }
+    origin: "*",
+    methods: ["GET", "POST"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true
+  },
+  transports: ["polling", "websocket"]
 });
 
 // ✅ store online users
