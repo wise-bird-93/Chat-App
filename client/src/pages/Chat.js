@@ -7,7 +7,7 @@ import ChatWindow from "../components/ChatWindow";
 import CreateGroup from "../components/CreateGroup";
 import GroupChatWindow from "../components/GroupChatWindow";
 
-function Chat() {
+function Chat({ onLogout }) {
   const [users, setUsers] = useState([]);
   const [groups, setGroups] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -55,8 +55,7 @@ function Chat() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+    onLogout();
     navigate("/login");
   };
 

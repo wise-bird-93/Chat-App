@@ -7,45 +7,68 @@ function ChatWindow({ selectedUser, currentUser, token }) {
   const [newMessage, setNewMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
 
   useEffect(() => {
+    // reset state when switching users
+    setMessages([]);
+    setIsTyping(false);
+    setNewMessage("");
+
     fetchMessages();
 
-    // listen for incoming private messages
+    // ✅ remove ALL old listeners before adding new ones
+    socket.off("privateMessage");
+    socket.off("typing");
+    socket.off("stopTyping");
+    socket.off("messageDelivered");
+    socket.off("messageRead");
+
+    // ✅ incoming message from other user
     socket.on("privateMessage", (data) => {
-      setMessages(prev => [...prev, {
-        sender: { _id: data.senderId },
-        content: data.content,
-        status: "delivered",
-        createdAt: data.createdAt
-      }]);
+      // ✅ only add message if it's FROM the other user
+      // never add our own messages here (we already add them in sendMessage)
+      if (data.senderId === selectedUser._id && 
+          data.senderId !== currentUser.id) {
+        setMessages(prev => [...prev, {
+          _id: data.messageId,
+          sender: { _id: data.senderId },
+          content: data.content,
+          status: "delivered",
+          createdAt: data.createdAt
+        }]);
+      }
     });
 
-    // listen for typing
+    // ✅ typing indicator
     socket.on("typing", (data) => {
       if (data.senderId === selectedUser._id) {
         setIsTyping(true);
       }
     });
 
-    // listen for stop typing
+    // ✅ stop typing
     socket.on("stopTyping", (data) => {
       if (data.senderId === selectedUser._id) {
         setIsTyping(false);
       }
     });
 
-    // listen for message delivered
+    // ✅ message delivered status
     socket.on("messageDelivered", ({ messageId }) => {
       setMessages(prev =>
-        prev.map(m => m._id === messageId ? { ...m, status: "delivered" } : m)
+        prev.map(m =>
+          m._id === messageId ? { ...m, status: "delivered" } : m
+        )
       );
     });
 
-    // listen for message read
+    // ✅ message read status
     socket.on("messageRead", ({ messageId }) => {
       setMessages(prev =>
-        prev.map(m => m._id === messageId ? { ...m, status: "read" } : m)
+        prev.map(m =>
+          m._id === messageId ? { ...m, status: "read" } : m
+        )
       );
     });
 
@@ -56,7 +79,7 @@ function ChatWindow({ selectedUser, currentUser, token }) {
       socket.off("messageDelivered");
       socket.off("messageRead");
     };
-  }, [selectedUser]);
+  }, [selectedUser._id]);
 
   useEffect(() => {
     scrollToBottom();
@@ -78,20 +101,23 @@ function ChatWindow({ selectedUser, currentUser, token }) {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  let typingTimeout;
   const handleTyping = (e) => {
     setNewMessage(e.target.value);
 
-    // emit typing
+    // emit typing event
     socket.emit("typing", {
       senderId: currentUser.id,
       receiverId: selectedUser._id,
       isGroup: false
     });
 
+    // clear previous timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
     // stop typing after 1.5 seconds
-    clearTimeout(typingTimeout);
-    typingTimeout = setTimeout(() => {
+    typingTimeoutRef.current = setTimeout(() => {
       socket.emit("stopTyping", {
         senderId: currentUser.id,
         receiverId: selectedUser._id,
@@ -103,23 +129,38 @@ function ChatWindow({ selectedUser, currentUser, token }) {
   const sendMessage = async () => {
     if (!newMessage.trim()) return;
 
+    const messageContent = newMessage;
+    setNewMessage("");
+
     try {
-      // send via socket for real-time
+      // ✅ save to DB via API to get real _id
+      const res = await axios.post(
+        "http://localhost:5000/api/messages/send",
+        {
+          receiverId: selectedUser._id,
+          content: messageContent
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      const savedMessage = res.data.data;
+
+      // ✅ add to local state with real _id
+      setMessages(prev => [...prev, {
+        _id: savedMessage._id,
+        sender: { _id: currentUser.id },
+        content: messageContent,
+        status: "sent",
+        createdAt: savedMessage.createdAt
+      }]);
+
+      // ✅ emit via socket for real-time delivery to receiver
       socket.emit("privateMessage", {
         senderId: currentUser.id,
         receiverId: selectedUser._id,
-        content: newMessage
+        content: messageContent,
+        messageId: savedMessage._id
       });
-
-      // add to local messages immediately
-      setMessages(prev => [...prev, {
-        sender: { _id: currentUser.id },
-        content: newMessage,
-        status: "sent",
-        createdAt: new Date()
-      }]);
-
-      setNewMessage("");
 
       // stop typing
       socket.emit("stopTyping", {
@@ -138,8 +179,8 @@ function ChatWindow({ selectedUser, currentUser, token }) {
   };
 
   const getStatusIcon = (status) => {
-    if (status === "sent") return "✓";
-    if (status === "delivered") return "✓✓";
+    if (status === "sent") return <span style={{ color: "#888" }}>✓</span>;
+    if (status === "delivered") return <span style={{ color: "#888" }}>✓✓</span>;
     if (status === "read") return <span style={{ color: "#53bdeb" }}>✓✓</span>;
     return "";
   };
@@ -153,7 +194,10 @@ function ChatWindow({ selectedUser, currentUser, token }) {
         </div>
         <div>
           <p style={styles.name}>{selectedUser.username}</p>
-          {isTyping && <p style={styles.typing}>typing...</p>}
+          {isTyping
+            ? <p style={styles.typing}>typing...</p>
+            : <p style={styles.online}>online</p>
+          }
         </div>
       </div>
 
@@ -241,10 +285,16 @@ const styles = {
     fontWeight: "bold",
     fontSize: "16px"
   },
-  typing: {
+  online: {
     margin: 0,
     color: "#dcf8c6",
     fontSize: "12px"
+  },
+  typing: {
+    margin: 0,
+    color: "#dcf8c6",
+    fontSize: "12px",
+    fontStyle: "italic"
   },
   messages: {
     flex: 1,
@@ -277,8 +327,7 @@ const styles = {
     color: "#888"
   },
   status: {
-    fontSize: "12px",
-    color: "#888"
+    fontSize: "12px"
   },
   inputArea: {
     padding: "12px 16px",

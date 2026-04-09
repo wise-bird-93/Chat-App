@@ -3,10 +3,15 @@ const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const http = require("http");
 const { Server } = require("socket.io");
+const cors = require("cors");
 
 dotenv.config();
 
 const app = express();
+app.use(cors({
+  origin: "http://localhost:3000",
+  methods: ["GET", "POST", "PUT", "DELETE"]
+}));
 app.use(express.json());
 
 // routes
@@ -50,53 +55,34 @@ io.on("connection", (socket) => {
   });
 
   // 2. PRIVATE MESSAGE
-  socket.on("privateMessage", async (data) => {
+socket.on("privateMessage", async (data) => {
     try {
-      console.log("Received privateMessage data:", data); // debug
-
-      // handle both string and object data from Postman
       if (typeof data === "string") {
         data = JSON.parse(data);
       }
 
-      const { senderId, receiverId, content } = data;
+      const { senderId, receiverId, content, messageId } = data;
 
-      // validate
-      if (!senderId || !receiverId || !content) {
-        console.log("Missing fields:", { senderId, receiverId, content });
-        return;
-      }
+      if (!senderId || !receiverId || !content) return;
 
-      // save to database
-      const Message = require("./models/Message");
-      const message = new Message({
-        sender: senderId,
-        receiver: receiverId,
-        content,
-        messageType: "private",
-        status: "sent"
-      });
-      await message.save();
-      console.log("Message saved to DB ✅");
-
-      // send to receiver if online
       const receiverSocketId = onlineUsers[receiverId];
       if (receiverSocketId) {
+        // ✅ only emit to RECEIVER, not sender
         io.to(receiverSocketId).emit("privateMessage", {
           senderId,
           content,
-          messageId: message._id,
-          createdAt: message.createdAt
+          messageId,
+          createdAt: new Date()
         });
 
         // update status to delivered
-        message.status = "delivered";
-        await message.save();
+        if (messageId) {
+          const Message = require("./models/Message");
+          await Message.findByIdAndUpdate(messageId, { status: "delivered" });
+        }
 
-        // notify sender message was delivered
-        socket.emit("messageDelivered", { messageId: message._id });
-      } else {
-        console.log("Receiver is offline, message saved but not delivered yet");
+        // ✅ notify only the SENDER about delivery
+        socket.emit("messageDelivered", { messageId });
       }
 
     } catch (err) {

@@ -3,6 +3,7 @@ const router = express.Router();
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const protect = require("../middleware/authMiddleware");
 
 // REGISTER
 router.post("/register", async (req, res) => {
@@ -74,6 +75,16 @@ router.post("/login", async (req, res) => {
       }
     });
 
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET ALL USERS (protected)
+router.get("/users", protect, async (req, res) => {
+  try {
+    const users = await User.find({}, "username email _id");
+    res.json(users);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
