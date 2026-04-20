@@ -233,6 +233,36 @@ socket.on("privateMessage", async (data) => {
     }
   });
 
+  // 9. MARK ALL MESSAGES AS READ
+socket.on("markAllRead", async ({ senderId, receiverId }) => {
+  try {
+    const Message = require("./models/Message");
+
+    // find all unread messages from sender to receiver
+    const messages = await Message.find({
+      sender: senderId,
+      receiver: receiverId,
+      status: { $ne: "read" }
+    });
+
+    // mark all as read
+    await Message.updateMany(
+      { sender: senderId, receiver: receiverId, status: { $ne: "read" } },
+      { status: "read" }
+    );
+
+    // notify sender to update their tick icons
+    const senderSocketId = onlineUsers[senderId];
+    if (senderSocketId) {
+      messages.forEach(msg => {
+        io.to(senderSocketId).emit("messageRead", { messageId: msg._id });
+      });
+    }
+  } catch (err) {
+    console.log("markAllRead error:", err.message);
+  }
+});
+
   // 8. USER DISCONNECTS
   socket.on("disconnect", () => {
     for (const userId in onlineUsers) {

@@ -17,6 +17,11 @@ function ChatWindow({ selectedUser, currentUser, token }) {
 
     fetchMessages();
 
+    socket.emit("markAllRead", {
+      senderId: selectedUser._id,
+      receiverId: currentUser.id
+    });
+
     window.dispatchEvent(new CustomEvent("clearUnread", {
       detail: { userId: selectedUser._id }
     }));
@@ -183,9 +188,12 @@ function ChatWindow({ selectedUser, currentUser, token }) {
   };
 
   const getStatusIcon = (status) => {
-    if (status === "sent") return <span style={{ color: "#888" }}>✓</span>;
-    if (status === "delivered") return <span style={{ color: "#888" }}>✓✓</span>;
-    if (status === "read") return <span style={{ color: "#53bdeb" }}>✓✓</span>;
+    if (status === "sent")
+      return <span style={{ color: "#888", fontSize: "14px" }}>✓</span>;
+    if (status === "delivered")
+      return <span style={{ color: "#888", fontSize: "14px" }}>✓✓</span>;
+    if (status === "read")
+      return <span style={{ color: "#53bdeb", fontSize: "14px" }}>✓✓✓</span>;
     return "";
   };
 
