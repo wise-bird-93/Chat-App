@@ -17,6 +17,10 @@ function ChatWindow({ selectedUser, currentUser, token }) {
 
     fetchMessages();
 
+    window.dispatchEvent(new CustomEvent("clearUnread", {
+      detail: { userId: selectedUser._id }
+    }));
+
     // ✅ remove ALL old listeners before adding new ones
     socket.off("privateMessage");
     socket.off("typing");

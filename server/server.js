@@ -78,6 +78,10 @@ socket.on("privateMessage", async (data) => {
           messageId,
           createdAt: new Date()
         });
+        
+        io.to(receiverSocketId).emit("newUnreadMessage", {
+          senderId
+        });
 
         // update status to delivered
         if (messageId) {
