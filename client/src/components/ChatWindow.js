@@ -200,7 +200,9 @@ function ChatWindow({ selectedUser, currentUser, token }) {
           <p style={styles.name}>{selectedUser.username}</p>
           {isTyping
             ? <p style={styles.typing}>typing...</p>
-            : <p style={styles.online}>online</p>
+            : <p style={styles.online}>
+                {selectedUser.isOnline ? "🟢 online" : "⚪ offline"}
+              </p>
           }
         </div>
       </div>

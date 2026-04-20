@@ -22,12 +22,28 @@ function Chat({ onLogout }) {
     // tell server this user is online
     socket.emit("userOnline", user.id);
 
-    // fetch all users
     fetchUsers();
-
-    // fetch all groups
     fetchGroups();
 
+    socket.on("onlineUsers", (onlineUserIds) => {
+      setUsers(prev => prev.map(u => ({
+        ...u,
+        isOnline: onlineUserIds.includes(u._id)
+      })));
+    });
+
+    // ✅ when tab is closed or refreshed
+    const handleBeforeUnload = () => {
+      socket.emit("userOffline", user.id);
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      // ✅ when component unmounts (logout)
+      socket.emit("userOffline", user.id);
+      socket.off("onlineUsers");
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
   }, []);
 
   const fetchUsers = async () => {

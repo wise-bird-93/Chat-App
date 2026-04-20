@@ -58,6 +58,12 @@ io.on("connection", (socket) => {
     io.emit("onlineUsers", Object.keys(onlineUsers));
   });
 
+  socket.on("userOffline", (userId) => {
+    delete onlineUsers[userId];
+    console.log("User went offline:", userId);
+    io.emit("onlineUsers", Object.keys(onlineUsers));
+  });
+
   // 2. PRIVATE MESSAGE
 socket.on("privateMessage", async (data) => {
     try {
